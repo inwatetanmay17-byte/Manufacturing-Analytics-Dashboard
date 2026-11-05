@@ -1,7 +1,7 @@
-create database manufacturing_analysis;
-use manufacturing_analysis;
+CREATE DATABASE IF NOT EXISTS manufacturing_analysis;
+USE manufacturing_analysis;
 
-CREATE TABLE production_data (
+CREATE TABLE IF NOT EXISTS production_data (
     Production_Date DATE,
     Machine_ID VARCHAR(10),
     Product VARCHAR(50),
@@ -10,86 +10,117 @@ CREATE TABLE production_data (
     Actual_Qty INT,
     Rejected_Qty INT,
     Downtime_Min INT,
-    Defect_Type VARCHAR(50)
+    Production_Efficiency VARCHAR(10),
+    Rejection_Rate VARCHAR(10)
 );
-show tables;
-describe production_data;
-SELECT
-    Machine_ID,
-    SUM(Actual_Qty) / SUM(Planned_Qty) * 100 AS Efficiency
-FROM production_data
-GROUP BY Machine_ID;
+
+
+SHOW TABLES;
+DESCRIBE production_data;
+
+
 SELECT COUNT(*) AS total_records
 FROM production_data;
+
+
 SELECT *
 FROM production_data
 LIMIT 10;
 
-SELECT SUM(Actual_Qty) AS Total_Production
-FROM production_data;
 
 SELECT
-    SUM(Planned_Qty) AS Total_Planned,
-    SUM(Actual_Qty) AS Total_Actual,
+    SUM(Planned_Qty) AS Total_Planned_Production,
+    SUM(Actual_Qty) AS Total_Production,
     SUM(Rejected_Qty) AS Total_Rejected,
-    SUM(Downtime_Min) AS Total_Downtime,
-    ROUND(SUM(Actual_Qty) / SUM(Planned_Qty) * 100, 2) AS Production_Efficiency,
-    ROUND(SUM(Rejected_Qty) / SUM(Actual_Qty) * 100, 2) AS Rejection_Rate
-FROM production_data; 
+    SUM(Downtime_Min) AS Total_Downtime_Minutes,
+    ROUND(100.0 * SUM(Actual_Qty) / NULLIF(SUM(Planned_Qty), 0), 2)
+        AS Production_Efficiency_Percent,
+    ROUND(100.0 * SUM(Rejected_Qty) / NULLIF(SUM(Actual_Qty), 0), 2)
+        AS Rejection_Rate_Percent
+FROM production_data;
 
 SELECT
     Machine_ID,
     SUM(Planned_Qty) AS Planned_Production,
     SUM(Actual_Qty) AS Actual_Production,
     SUM(Rejected_Qty) AS Rejected_Quantity,
-    SUM(Downtime_Min) AS Total_Downtime,
-    ROUND(SUM(Actual_Qty) / SUM(Planned_Qty) * 100, 2) AS Efficiency,
-    ROUND(SUM(Rejected_Qty) / SUM(Actual_Qty) * 100, 2) AS Rejection_Rate
+    SUM(Downtime_Min) AS Total_Downtime_Minutes,
+    ROUND(100.0 * SUM(Actual_Qty) / NULLIF(SUM(Planned_Qty), 0), 2)
+        AS Production_Efficiency_Percent,
+    ROUND(100.0 * SUM(Rejected_Qty) / NULLIF(SUM(Actual_Qty), 0), 2)
+        AS Rejection_Rate_Percent
 FROM production_data
 GROUP BY Machine_ID
-ORDER BY Efficiency DESC;
+ORDER BY Production_Efficiency_Percent DESC;
 
 
 SELECT
     Shift,
-    SUM(Actual_Qty) AS Production,
-    SUM(Rejected_Qty) AS Rejected,
-    SUM(Downtime_Min) AS Downtime,
-    ROUND(SUM(Actual_Qty) / SUM(Planned_Qty) * 100, 2) AS Efficiency,
-    ROUND(SUM(Rejected_Qty) / SUM(Actual_Qty) * 100, 2) AS Rejection_Rate
+    SUM(Planned_Qty) AS Planned_Production,
+    SUM(Actual_Qty) AS Actual_Production,
+    SUM(Rejected_Qty) AS Rejected_Quantity,
+    SUM(Downtime_Min) AS Total_Downtime_Minutes,
+    ROUND(100.0 * SUM(Actual_Qty) / NULLIF(SUM(Planned_Qty), 0), 2)
+        AS Production_Efficiency_Percent,
+    ROUND(100.0 * SUM(Rejected_Qty) / NULLIF(SUM(Actual_Qty), 0), 2)
+        AS Rejection_Rate_Percent
 FROM production_data
 GROUP BY Shift
-ORDER BY Efficiency DESC;
+ORDER BY Production_Efficiency_Percent DESC;
+
 
 SELECT
     Product,
-    SUM(Actual_Qty) AS Production,
-    SUM(Rejected_Qty) AS Rejected,
-    SUM(Downtime_Min) AS Downtime,
-    ROUND(SUM(Actual_Qty) / SUM(Planned_Qty) * 100, 2) AS Efficiency
+    SUM(Planned_Qty) AS Planned_Production,
+    SUM(Actual_Qty) AS Actual_Production,
+    SUM(Rejected_Qty) AS Rejected_Quantity,
+    SUM(Downtime_Min) AS Total_Downtime_Minutes,
+    ROUND(100.0 * SUM(Actual_Qty) / NULLIF(SUM(Planned_Qty), 0), 2)
+        AS Production_Efficiency_Percent,
+    ROUND(100.0 * SUM(Rejected_Qty) / NULLIF(SUM(Actual_Qty), 0), 2)
+        AS Rejection_Rate_Percent
 FROM production_data
 GROUP BY Product
-ORDER BY Production DESC;
+ORDER BY Actual_Production DESC;
 
-SELECT
-    Defect_Type,
-    SUM(Rejected_Qty) AS Rejected_Quantity,
-    COUNT(*) AS Occurrences
-FROM production_data
-GROUP BY Defect_Type
-ORDER BY Rejected_Quantity DESC;
 
 SELECT
     Machine_ID,
-    SUM(Downtime_Min) AS Total_Downtime
+    SUM(Downtime_Min) AS Total_Downtime_Minutes
 FROM production_data
 GROUP BY Machine_ID
-ORDER BY Total_Downtime DESC;
+ORDER BY Total_Downtime_Minutes DESC;
+
 
 SELECT
-    DATE_FORMAT(Production_Date, '%Y-%m') AS Month,
-    SUM(Actual_Qty) AS Production,
-    SUM(Rejected_Qty) AS Rejected
+    DATE_FORMAT(Production_Date, '%Y-%m') AS Production_Month,
+    SUM(Planned_Qty) AS Planned_Production,
+    SUM(Actual_Qty) AS Actual_Production,
+    SUM(Rejected_Qty) AS Rejected_Quantity,
+    ROUND(100.0 * SUM(Actual_Qty) / NULLIF(SUM(Planned_Qty), 0), 2)
+        AS Production_Efficiency_Percent,
+    ROUND(100.0 * SUM(Rejected_Qty) / NULLIF(SUM(Actual_Qty), 0), 2)
+        AS Rejection_Rate_Percent
 FROM production_data
 GROUP BY DATE_FORMAT(Production_Date, '%Y-%m')
-ORDER BY Month;
+ORDER BY Production_Month;
+
+SELECT
+    SUM(Production_Date IS NULL) AS Missing_Production_Date,
+    SUM(Machine_ID IS NULL OR Machine_ID = '') AS Missing_Machine_ID,
+    SUM(Product IS NULL OR Product = '') AS Missing_Product,
+    SUM(Shift IS NULL OR Shift = '') AS Missing_Shift,
+    SUM(Planned_Qty IS NULL) AS Missing_Planned_Qty,
+    SUM(Actual_Qty IS NULL) AS Missing_Actual_Qty,
+    SUM(Rejected_Qty IS NULL) AS Missing_Rejected_Qty,
+    SUM(Downtime_Min IS NULL) AS Missing_Downtime_Min
+FROM production_data;
+
+
+SELECT *
+FROM production_data
+WHERE Planned_Qty < 0
+   OR Actual_Qty < 0
+   OR Rejected_Qty < 0
+   OR Downtime_Min < 0
+   OR Rejected_Qty > Actual_Qty;
